@@ -1,0 +1,3 @@
+特徴量名,説明,カラム
+Base,Base feature,timestamp / Asset_ID / Count / Open / High / Low / Close / Volume / VWAP / Target / datetime
+shadow_features,Shadow features,Upper_Shadow / Lower_Shadow

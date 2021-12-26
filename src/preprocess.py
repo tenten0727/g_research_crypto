@@ -13,19 +13,11 @@ def preprocess(train, test):
     matrix = []
     return matrix
 
-
 def base_data():
     print('++++++ Data Loading ++++++')
-    train = pd.read_csv(os.path.join(DATA_FOLDER, 'sales_train.csv.gz'))
-    test = pd.read_csv(os.path.join(DATA_FOLDER, 'test.csv.gz'))
-
-    base_path = os.path.join(DATA_FOLDER, 'base_data.pkl')
-    if os.path.exists(base_path):
-        # pickleで前処理したものを保存してる
-        data = pd.read_pickle(base_path)
-    else:
-        data = preprocess(train, test)
-        data.to_pickle(base_path)
-        print('Finish preprocess')
+    data = pd.read_pickle(os.path.join(DATA_FOLDER, 'train.pkl'))
+    asset_detail = pd.read_csv(os.path.join(DATA_FOLDER, 'asset_details.csv'))
     
-    return data
+    data['datetime'] = pd.to_datetime(data['timestamp'], unit='s')
+
+    return data, asset_detail
