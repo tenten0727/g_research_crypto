@@ -15,14 +15,14 @@ def get_arguments():
     return parser.parse_args()
 
 
-def get_features(namespace):
+def get_features_class(namespace):
     for k, v in namespace.items():
         if inspect.isclass(v) and issubclass(v, Feature) and not inspect.isabstract(v):
             yield v()
 
 
 def generate_features(namespace, overwrite):
-    for f in get_features(namespace):
+    for f in get_features_class(namespace):
         if f.data_path.exists() and f.name not in overwrite:
             print(f.name, 'was skipped')
         else:

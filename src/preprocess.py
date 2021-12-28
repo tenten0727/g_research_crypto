@@ -7,7 +7,7 @@ from itertools import product
 from pandas.core.indexes import base
 from sklearn.preprocessing import LabelEncoder
 
-DATA_FOLDER = '../data'
+DATA_FOLDER = '../input'
 
 def preprocess(train, test):
     matrix = []
@@ -15,8 +15,16 @@ def preprocess(train, test):
 
 def base_data():
     print('++++++ Data Loading ++++++')
-    data = pd.read_pickle(os.path.join(DATA_FOLDER, 'train.pkl'))
-    asset_detail = pd.read_csv(os.path.join(DATA_FOLDER, 'asset_details.csv'))
+    train_pkl_path = os.path.join(DATA_FOLDER, 'train.pkl')
+    if os.path.exists(train_pkl_path):
+        data = pd.read_pickle(train_pkl_path)
+    else:
+        data = pd.read_csv(os.path.join(DATA_FOLDER, 'g-research-crypto-forecasting', 'train.csv'))
+        # kaggleでそのまま使えるようにするため
+        if os.access(train_pkl_path, os.W_OK):
+            data.to_pickle(train_pkl_path)
+
+    asset_detail = pd.read_csv(os.path.join(DATA_FOLDER, 'g-research-crypto-forecasting', 'asset_details.csv'))
     
     data['datetime'] = pd.to_datetime(data['timestamp'], unit='s')
 

@@ -128,5 +128,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-data
 features/*.pkl
+mlruns
+result
+input
+.vscode
+src/upload_file.sh
+dataset-metadata.json

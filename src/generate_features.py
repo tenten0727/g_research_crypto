@@ -11,8 +11,6 @@ from sklearn.model_selection import KFold
 import glob
 from sklearn.cluster import KMeans
 
-ENGLISH_DATA_FOLDER = '../../readonly/english_translations'
-
 Feature.dir = '../features'
 data, asset_detail = base_data()
 
@@ -27,7 +25,7 @@ class Base(Feature):
         self.data = data
         self.create_memo('Base feature')
 
-class shadow_features(Feature):
+class Shadow_features(Feature):
     def create_features(self):
         df_data = data.copy()
         df_data['Upper_Shadow'] = upper_shadow(df_data)
