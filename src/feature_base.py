@@ -14,12 +14,10 @@ def get_arguments():
     parser.add_argument('--force', '-f', nargs='*', help='Overwrite existing files', default=list())
     return parser.parse_args()
 
-
 def get_features_class(namespace):
     for k, v in namespace.items():
         if inspect.isclass(v) and issubclass(v, Feature) and not inspect.isabstract(v):
             yield v()
-
 
 def generate_features(namespace, overwrite):
     for f in get_features_class(namespace):
@@ -27,6 +25,14 @@ def generate_features(namespace, overwrite):
             print(f.name, 'was skipped')
         else:
             f.run().save()
+
+def create_all_features(namespace):
+    dfs = []
+    for f in get_features_class(namespace):
+        f.run()
+        dfs.append(f.data)
+    
+    return pd.concat(dfs, axis=1)
 
 def load_datasets(feats):
     dfs = [pd.read_pickle(f) for f in feats]

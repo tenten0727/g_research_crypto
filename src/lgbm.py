@@ -4,15 +4,15 @@ import lightgbm as lgbm
 import sys
 from sklearn.model_selection import train_test_split
 import argparse
-import matplotlib.pyplot as plt
 import mlflow
 import mlflow.lightgbm
 import csv
 import glob
-from feature_base import load_datasets
-import subprocess
 
-DATA_FOLDER = '../../readonly/final_project_data'
+from feature_base import load_datasets
+from utils import weighted_correlation
+
+DATA_FOLDER = '../input'
 FEATURE_FOLDER = '../features'
 RESULT_FOLDER = '../result/LGBM'
 
@@ -63,7 +63,7 @@ with mlflow.start_run():
         "metric": "rmse", 
         "boosting_type": "gbdt",
         'early_stopping_rounds': 50,
-        'learning_rate': 0.05,
+        'learning_rate': 0.1,
         'lambda_l1': 1,
         'lambda_l2': 1,
         'max_depth': 7,
@@ -78,4 +78,17 @@ with mlflow.start_run():
                 verbose_eval=100,
                 categorical_feature = category_feature,
             )
+
+    print('--- Test ---')
+    X_test = df_test.drop(del_columns, axis=1)
+    y_test = df_test[['Target', 'Asset_ID']]
+    y_test['predict'] = model.predict(X_test, num_iteration=model.best_iteration)
+
+    asset_details = pd.read_csv(os.path.join(DATA_FOLDER, 'g-research-crypto-forecasting', 'asset_details.csv'))
+    weight_map_dict = dict(zip(asset_details['Asset_ID'], asset_details['Weight']))
+    y_test['weight'] = y_test['Asset_ID'].map(weight_map_dict)
+
+    metric = weighted_correlation(y_test['predict'], y_test['Target'], y_test['weight'])
+    print('weighted_corr:', metric)
+    mlflow.log_metric('weighted_corr', metric)
 
