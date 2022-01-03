@@ -81,3 +81,12 @@ def weighted_correlation(a, b, weights):
 * PBはほとんど意味がないので、提出は最後の方で考えればいいのでは
 * とりあえずローカルで評価指標を見ながら実験をする
 * テストも実装した。
+* 特徴量
+  * ラグ
+  * 通貨ごとの集約特徴量
+  * optiver参考になりそう
+
+### 2021003
+* 自己相関関数
+  * https://www.kaggle.com/iamleonie/time-series-interpreting-acf-and-pacf
+  * 統計学っぽい話？だと思う。
