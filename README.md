@@ -90,3 +90,15 @@ def weighted_correlation(a, b, weights):
 * 自己相関関数
   * https://www.kaggle.com/iamleonie/time-series-interpreting-acf-and-pacf
   * 統計学っぽい話？だと思う。
+* 特徴量中和
+  * https://www.kaggle.com/yamqwe/g-research-avoid-overfit-feature-neutralization/
+  * overfitの際に特徴量とターゲットの間の線形成分を取り除く？
+  * 他のコンペやnumeraiなどでも効果が発揮されている。
+* 損失関数に何を使うべきか調査
+* technical特徴量移動平均などを通貨ごとにしていなかったから意味なくなってる
+* テクニカル分析の特徴量を作れるライブラリあるらしい
+
+
+### 2021004
+* technical特徴量移動平均などを通貨ごとにしていなかったから意味なくなってる
+  * 修正
