@@ -10,7 +10,7 @@ import csv
 import glob
 
 from feature_base import load_datasets
-from utils import weighted_correlation
+from utils import weighted_correlation, eval_w_corr
 
 DATA_FOLDER = '../input'
 FEATURE_FOLDER = '../features'
@@ -50,7 +50,7 @@ with mlflow.start_run():
     
     mlflow.log_artifact(os.path.join(RESULT_FOLDER, 'columns.csv'))
 
-    category_feature = []
+    category_feature = ['Asset_ID']
 
     X_train, X_valid, y_train, y_valid = train_test_split(X, y)
     lgbm_train = lgbm.Dataset(X_train, y_train)
@@ -60,7 +60,7 @@ with mlflow.start_run():
 
     params = {
         "objective": "regression", 
-        "metric": "rmse", 
+        # "metric": "rmse", 
         "boosting_type": "gbdt",
         'early_stopping_rounds': 50,
         'learning_rate': 0.1,
@@ -76,6 +76,7 @@ with mlflow.start_run():
                 valid_sets=[lgbm_train, lgbm_valid],
                 num_boost_round=5000,
                 verbose_eval=100,
+                feval=eval_w_corr,
                 categorical_feature = category_feature,
             )
 
