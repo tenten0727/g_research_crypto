@@ -119,11 +119,16 @@ class Richman_feature(Feature):
         df_data['Close_diff1_rank'] = df_data.groupby('timestamp')['raw_return_causal'].transform('rank')
 
         self.data = df_data.drop(data.columns, axis=1)
-
-        self.data = df_data
         self.create_memo('Richmanbtcさんのノートブックの特徴量')
 
+class Interval_feature(Feature):
+    def create_features(self):
+        df_data = data.copy()
 
+        df_data['interval'] = df_data['timestamp'] - df_data.groupby('Asset_ID').timestamp.shift(1)
+        self.data = df_data.drop(data.columns, axis=1)
+
+        self.create_memo('前の取引データから何秒間空いたかの特徴量')
 
 def run():
     if not os.path.isdir(Feature.dir):
