@@ -55,6 +55,8 @@ with mlflow.start_run():
     X_train, X_valid, y_train, y_valid = train_test_split(X, y)
     lgbm_train = lgbm.Dataset(X_train, y_train)
     lgbm_valid = lgbm.Dataset(X_valid, y_valid)
+    lgbm_train.add_w = X_train['Weight']
+    lgbm_valid.add_w = X_valid['Weight']
 
     print('--- Training ---')
 

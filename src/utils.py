@@ -1,7 +1,7 @@
 import numpy as np
 
 def eval_w_corr(preds, train_data):
-  w = train_data.Weight.values()
+  w = train_data.add_w
   y_true = train_data.get_label()
   return 'eval_wcorr', weighted_correlation(preds, y_true, w), True
 
