@@ -52,7 +52,7 @@ with mlflow.start_run():
 
     category_feature = ['Asset_ID']
 
-    X_train, X_valid, y_train, y_valid = train_test_split(X, y)
+    X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, shuffle=False)
     lgbm_train = lgbm.Dataset(X_train, y_train)
     lgbm_valid = lgbm.Dataset(X_valid, y_valid)
     lgbm_train.add_w = X_train['Weight']
@@ -65,7 +65,7 @@ with mlflow.start_run():
         # "metric": "rmse", 
         "boosting_type": "gbdt",
         'early_stopping_rounds': 50,
-        'learning_rate': 0.1,
+        'learning_rate': 0.01,
         'lambda_l1': 1,
         'lambda_l2': 1,
         'max_depth': 7,
@@ -76,7 +76,7 @@ with mlflow.start_run():
     model = lgbm.train(params=params,
                 train_set=lgbm_train,
                 valid_sets=[lgbm_train, lgbm_valid],
-                num_boost_round=5000,
+                num_boost_round=1000,
                 verbose_eval=100,
                 feval=eval_w_corr,
                 categorical_feature = category_feature,

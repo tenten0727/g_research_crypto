@@ -10,6 +10,7 @@ from preprocess import base_data
 from sklearn.model_selection import KFold
 import glob
 from sklearn.cluster import KMeans
+import talib
 
 Feature.dir = '../features'
 data, asset_detail = base_data()
@@ -33,6 +34,21 @@ class Shadow_features(Feature):
 
         self.data = df_data[['Upper_Shadow', 'Lower_Shadow']]
         self.create_memo('Shadow features')
+
+class Arithmetic_operations(Feature):
+    def create_features(self):
+        df_data = data.copy()
+
+        df_data['high_low_div'] = df_data['High'] / df_data['Low']
+        df_data['open_close_div'] = df_data['Open'] / df_data['Close']
+
+        df_data["open_close_sub"] = df_data["Open"] - df_data["Close"]
+        df_data["high_low_sub"] = df_data["High"] - df_data["Low"]
+
+        df_data['hlco_ration'] = df_data["open_close_sub"] / df_data["high_low_sub"]
+
+        self.data = df_data.drop(data.columns, axis=1)
+        self.create_memo('四則演算で計算した特徴量')
 
 # https://www.kaggle.com/yamqwe/crypto-prediction-technical-analysis-features
 class Technical_analysis_feature(Feature):
@@ -78,7 +94,7 @@ class Technical_analysis_feature(Feature):
             df_data['bollinger_band_high_'+str(i)] = df_data['moving_average_'+str(i)] + 2 * df_data['moving_std_'+str(i)]
             df_data['bollinger_band_low_'+str(i)] = df_data['moving_average_'+str(i)] - 2 * df_data['moving_std_'+str(i)]
 
-            # 相対力指数（RSI）
+            # 相対力指数（RSI）...相場の過熱感を一定期間の終値から計算するオシレータ系指標
             df_data['RSI_'+str(i)] = df_data.groupby('Asset_ID').Close.transform(lambda x: self._rsiFunc(x.values, i))
 
             # volumeの移動平均
@@ -90,6 +106,40 @@ class Technical_analysis_feature(Feature):
 
         self.data = df_data.drop(data.columns, axis=1)
         self.create_memo('テクニカル分析の際に用いる指標に関する特徴量')
+
+# Ta-Libを利用して算出
+class Overlap_studies(Feature):
+    def create_features(self):
+        df_data = data.copy()
+        asset_group_close = df_data.groupby('Asset_ID').Close
+
+        l_window = [5, 12, 19, 26]
+        for i in l_window:
+            # ２重指数移動平均(DEMA: Double Exponential Moving Average)
+            df_data['double_ema_'+str(i)] = asset_group_close.transform(lambda x: talib.DEMA(x, timeperiod=i))
+
+            # Kaufmanの適応型移動平均(KAMA: Kaufman Adaptive Moving Average)
+            df_data['kama_'+str(i)] = asset_group_close.transform(lambda x: talib.KAMA(x, timeperiod=i))
+
+        # トレンドライン(Hilbert Transform - Instantaneous Trendline)
+        df_data['ht_trendline'] = asset_group_close.transform(lambda x: talib.HT_TRENDLINE(x))
+        self.data = df_data.drop(data.columns, axis=1)
+        self.create_memo('talibのoverlap_studiesにある関数の特徴量')
+
+# Ta-Libを利用して算出
+class Momentum_indicator(Feature):
+    def create_features(self):
+        df_data = data.copy()
+
+        for id in df_data.Asset_ID.unique():
+        # ADX - Average Directional Movement Index (平均方向性指数)
+        # トレンドの存在を確認するための指標
+            x = df_data[df_data.Asset_ID==id]
+            df_data.loc[df_data.Asset_ID==id, 'adx'] = talib.ADX(x.High, x.Low, x.Close, timeperiod=14)
+
+        self.data = df_data.drop(data.columns, axis=1)
+        self.create_memo('talibのoverlap_studiesにある関数の特徴量')
+
 
 # richmanbtcさんのfeature https://www.kaggle.com/richmanbtc/20211103-gresearch-crypto-v1
 # todo: 中身の理解
@@ -129,6 +179,7 @@ class Interval_feature(Feature):
         self.data = df_data.drop(data.columns, axis=1)
 
         self.create_memo('前の取引データから何秒間空いたかの特徴量')
+
 
 def run():
     if not os.path.isdir(Feature.dir):
