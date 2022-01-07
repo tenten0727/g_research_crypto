@@ -64,7 +64,7 @@ with mlflow.start_run():
         "objective": "regression", 
         # "metric": "rmse", 
         "boosting_type": "gbdt",
-        'early_stopping_rounds': 50,
+        'early_stopping_rounds': 100,
         'learning_rate': 0.01,
         'lambda_l1': 1,
         'lambda_l2': 1,
@@ -72,6 +72,8 @@ with mlflow.start_run():
         'feature_fraction': 0.8,
         'bagging_fraction': 0.8,
         }
+
+    mlflow.log_params(params)
 
     model = lgbm.train(params=params,
                 train_set=lgbm_train,
