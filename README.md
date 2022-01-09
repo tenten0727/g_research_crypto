@@ -118,3 +118,44 @@ def weighted_correlation(a, b, weights):
   * シャッフルしちゃってた
   * 修正後ある程度の評価が出た
   * 過学習はしてる気がする
+
+### 2021006
+* https://www.kaggle.com/lucasmorin/on-line-feature-engineering
+  * オンライン特徴量作成
+  * testデータでの予測の際にAPIによって分割されたデータが逐一渡されるため、特徴量をその度に作る必要がある。この時に前の情報が必要な特徴量があるときに困る。
+  * オンラインで作成する方法を載せてくれているが、これ以外にもかなり作りたい特徴量があるので、多少非効率でも動くならメモリにデータを置いとくなどで対応したい。
+* targetについて
+  * ターゲットは 15 分間のログリターン（𝑅𝑎）から導き出されます。
+  * ログリターンからそれぞれのアセットの情報を引いた感じ？
+* lgbm parameters
+  * earlystopping: The rule of thumb is to have it at 10% of your num_iterations.
+* PurgedGroupTimeSeriesSplitでバリデーション
+  * https://www.kaggle.com/marketneutral/purged-time-series-cv-xgboost-optuna
+
+
+### 2021007
+* PurgedGroupTimeSeriesSplitがかなり時間かかる
+  * 移動平均などを使用しているため、パージするのは大事そう
+  * とりあえずクロスバリデーションはせずに、単純に何日か開けてバリデーションを作る
+  * 2018-01-01~2021-09-21
+  * 特徴量に追加しよう
+
+### 2021008
+* submit notebookのサブミットエラーは何かわからん
+  * とりあえず特徴量作成の時に残すようにする
+  * もしかしたら特徴量がnullにならないものがnullになってて提出時もnullになってしまっているかも
+
+
+### 2021009
+* timeseriesAPIは不正されないように一回しかデータを呼べないようになっているためエラーが出るたびにセッションを再起動する必要がある。。。
+* https://www.kaggle.com/yamqwe/purgedgrouptimeseries-cv-with-extra-data-lgbm/notebook#Data-Loading-%F0%9F%97%83%EF%B8%8F
+  * validation参考に
+* https://www.kaggle.com/c/g-research-crypto-forecasting/discussion/284888
+  * 以前のコンペのノートブックまとめ
+* https://www.kaggle.com/c/g-research-crypto-forecasting/discussion/285047
+  * 使えそうなパッケージやAutoML  
+* 毎月最初の１分間が欠落してる
+* おそらく提出直前のデータや2018年以前のデータも使わないと勝てない
+* https://www.kaggle.com/c/g-research-crypto-forecasting/discussion/294928
+  * 特徴量エンジニアリングの参考
+

@@ -15,7 +15,7 @@ def get_arguments():
     return parser.parse_args()
 
 def get_features_class(namespace):
-    for k, v in namespace.items():
+    for k, v in list(namespace.items()):
         if inspect.isclass(v) and issubclass(v, Feature) and not inspect.isabstract(v):
             yield v()
 
