@@ -29,7 +29,7 @@ def generate_features(namespace, overwrite):
 def create_all_features(namespace):
     dfs = []
     for f in get_features_class(namespace):
-        f.run()
+        f.run(timer_on=False)
         dfs.append(f.data)
     
     return pd.concat(dfs, axis=1)
@@ -57,8 +57,14 @@ class Feature(metaclass=ABCMeta):
         self.data = pd.DataFrame()
         self.data_path = Path(self.dir) / f'{self.name}.pkl'
     
-    def run(self):
-        with timer(self.name):
+    def run(self, timer_on = True):
+        if timer_on:
+            with timer(self.name):
+                self.create_features()
+                prefix = self.prefix + '_' if self.prefix else ''
+                suffix = '_' + self.suffix if self.suffix else ''
+                self.data.columns = prefix + self.data.columns + suffix
+        else:
             self.create_features()
             prefix = self.prefix + '_' if self.prefix else ''
             suffix = '_' + self.suffix if self.suffix else ''

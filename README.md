@@ -159,3 +159,13 @@ def weighted_correlation(a, b, weights):
 * https://www.kaggle.com/c/g-research-crypto-forecasting/discussion/294928
   * 特徴量エンジニアリングの参考
 
+### 2021009
+* 何日も前の移動平均はそんな必要なさそう（15分後のリターン予測？だから）
+
+### 2021010
+* テストのエラーはprintしまくってたから時間かかったのでは？
+* 修正してサブミット(lgbm007)
+* kfoldのサブミットコード作成
+  * mlflowで一つしか保存できていなかった
+  * 自動でできるか調査
+  * 

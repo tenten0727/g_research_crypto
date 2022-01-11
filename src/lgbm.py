@@ -39,7 +39,7 @@ with mlflow.start_run():
     df_train = data[data['datetime'] < '2021-06-13 00:00:00']
     df_test = data[data['datetime'] >= '2021-06-13 00:00:00']
     if opts.debug:
-        df_train = df_train[:1000]
+        df_train = df_train[:100000]
 
     del_columns = ['datetime', 'Target']
     X = df_train.drop(del_columns, axis=1)
@@ -53,6 +53,9 @@ with mlflow.start_run():
     category_feature = ['Asset_ID']
 
     X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.2, shuffle=False)
+    max_lookback = 30*24*60 + 1
+    X_train = X_train[:-max_lookback]
+    y_train = y_train[:-max_lookback]
     lgbm_train = lgbm.Dataset(X_train, y_train)
     lgbm_valid = lgbm.Dataset(X_valid, y_valid)
     lgbm_train.add_w = X_train['Weight']

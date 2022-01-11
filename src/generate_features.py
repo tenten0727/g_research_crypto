@@ -82,7 +82,7 @@ class Technical_analysis_feature(Feature):
     def create_features(self):
         df_data = data.copy()
 
-        l_window = [5, 12, 26, 60, 5*60, 24*60, 10*24*60,30*24*60]
+        l_window = [5, 12, 26, 60, 5*60, 24*60]
         for i in l_window:
             df_data['moving_average_'+str(i)] = df_data.groupby('Asset_ID').Close.transform(lambda x: x.rolling(window=i).mean())
             df_data['moving_std_'+str(i)] = df_data.groupby('Asset_ID').Close.transform(lambda x: x.rolling(window=i).std())
@@ -115,7 +115,7 @@ class Overlap_studies(Feature):
         df_data = data.copy()
         asset_group_close = df_data.groupby('Asset_ID').Close
 
-        l_window = [5, 12, 26, 60, 5*60, 24*60, 10*24*60,30*24*60]
+        l_window = [5, 12, 26, 60, 5*60, 24*60]
         for i in l_window:
             # ２重指数移動平均(DEMA: Double Exponential Moving Average)
             df_data['double_ema_'+str(i)] = asset_group_close.transform(lambda x: talib.DEMA(x, timeperiod=i))
