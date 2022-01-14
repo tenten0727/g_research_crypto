@@ -1,0 +1,1 @@
+jupyter nbconvert --to notebook --execute $1 --inplace --ExecutePreprocessor.timeout=2678400 --allow-errors --debug

@@ -15,7 +15,7 @@ from utils import weighted_correlation, eval_w_corr, PurgedGroupTimeSeriesSplit
 
 DATA_FOLDER = '../input'
 FEATURE_FOLDER = '../features'
-RESULT_FOLDER = '../result/LGBM'
+RESULT_FOLDER = '../result/LGBM_kfold'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--debug',  action='store_true')
@@ -25,7 +25,7 @@ opts = parser.parse_args()
 if opts.debug:
     opts.save_name = 'debug'
 
-mlflow.lightgbm.autolog(disable=True)
+mlflow.lightgbm.autolog()
 with mlflow.start_run(experiment_id=1):
     mlflow.log_params(vars(opts))
 
@@ -39,8 +39,8 @@ with mlflow.start_run(experiment_id=1):
 
     df_train = data[data['datetime'] < '2021-06-13 00:00:00']
     df_test = data[data['datetime'] >= '2021-06-13 00:00:00']
-    # if opts.debug:
-    #     df_train = df_train[:100000]
+    if opts.debug:
+        df_train = df_train[:1000000]
 
     del_columns = ['datetime', 'Target']
     X = df_train.drop(del_columns, axis=1)
@@ -103,6 +103,7 @@ with mlflow.start_run(experiment_id=1):
         oof_preds[val] = pred
         cv_score = weighted_correlation(pred, y_valid, X_valid.Asset_ID.map(weight_map_dict))
         print(f'~~~~~~~~ FOLD {i} wcorr: {cv_score} ~~~~~~~~')
+        model.save_model(os.path.join(RESULT_FOLDER, f'model{i}.lgb'), num_iteration=model.best_iteration)
         mlflow.log_metric('fold_score', cv_score)
 
     print('--- Test ---')
