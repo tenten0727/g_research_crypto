@@ -72,8 +72,8 @@ with mlflow.start_run():
         'lambda_l1': 1,
         'lambda_l2': 1,
         'max_depth': 7,
-        'feature_fraction': 0.8,
-        'bagging_fraction': 0.8,
+        'feature_fraction': 0.6,
+        'bagging_fraction': 0.6,
         }
 
     mlflow.log_params(params)
