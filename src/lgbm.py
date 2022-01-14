@@ -41,7 +41,7 @@ with mlflow.start_run():
     if opts.debug:
         df_train = df_train[:100000]
 
-    del_columns = ['datetime', 'Target']
+    del_columns = ['datetime', 'Target', 'timestamp']
     X = df_train.drop(del_columns, axis=1)
     y = df_train['Target']
     with open(os.path.join(RESULT_FOLDER, 'columns.csv'), 'w') as f:

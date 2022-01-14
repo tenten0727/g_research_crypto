@@ -12,6 +12,10 @@ import glob
 from sklearn.cluster import KMeans
 import talib
 
+import sys
+sys.path.append('../src')
+from utils import RunningMean
+
 Feature.dir = '../features'
 data, asset_detail = base_data()
 
@@ -50,9 +54,8 @@ class Window_feature(Feature):
     def create_features(self):
         self.data['Asset_ID'] = data['Asset_ID']
         asset_group_close = data.groupby('Asset_ID').Close
-        l_window = [5, 12, 26, 60, 5*60, 24*60]
+        l_window = [5, 12, 26, 60]
         for i in l_window:
-
             self.data['moving_average_'+str(i)] = asset_group_close.transform(lambda x: x.rolling(window=i).mean())
             self.data['moving_std_'+str(i)] = asset_group_close.transform(lambda x: x.rolling(window=i).std())
             
