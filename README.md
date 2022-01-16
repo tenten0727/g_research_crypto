@@ -86,7 +86,7 @@ def weighted_correlation(a, b, weights):
   * 通貨ごとの集約特徴量
   * optiver参考になりそう
 
-### 2021003
+### 20220103
 * 自己相関関数
   * https://www.kaggle.com/iamleonie/time-series-interpreting-acf-and-pacf
   * 統計学っぽい話？だと思う。
@@ -99,12 +99,12 @@ def weighted_correlation(a, b, weights):
 * テクニカル分析の特徴量を作れるライブラリあるらしい talib
 
 
-### 2021004
+### 20220104
 * technical特徴量移動平均などを通貨ごとにしていなかったから意味なくなってる
   * 修正
 * lgbmのfevalを設定
 
-### 2021005
+### 20220105
 * openやcloseのlagは意味があるか
   * 必ずしもcloseと次のopenが一致する訳ではない（そりゃそうか。前の段階の値段で絶対に取引するとは限らない）
   * 意味なくはないかもしれないけど差や割合とかの方が大事そう？
@@ -119,7 +119,7 @@ def weighted_correlation(a, b, weights):
   * 修正後ある程度の評価が出た
   * 過学習はしてる気がする
 
-### 2021006
+### 20220106
 * https://www.kaggle.com/lucasmorin/on-line-feature-engineering
   * オンライン特徴量作成
   * testデータでの予測の際にAPIによって分割されたデータが逐一渡されるため、特徴量をその度に作る必要がある。この時に前の情報が必要な特徴量があるときに困る。
@@ -133,20 +133,20 @@ def weighted_correlation(a, b, weights):
   * https://www.kaggle.com/marketneutral/purged-time-series-cv-xgboost-optuna
 
 
-### 2021007
+### 20220107
 * PurgedGroupTimeSeriesSplitがかなり時間かかる
   * 移動平均などを使用しているため、パージするのは大事そう
   * とりあえずクロスバリデーションはせずに、単純に何日か開けてバリデーションを作る
   * 2018-01-01~2021-09-21
   * 特徴量に追加しよう
 
-### 2021008
+### 20220108
 * submit notebookのサブミットエラーは何かわからん
   * とりあえず特徴量作成の時に残すようにする
   * もしかしたら特徴量がnullにならないものがnullになってて提出時もnullになってしまっているかも
 
 
-### 2021009
+### 20220109
 * timeseriesAPIは不正されないように一回しかデータを呼べないようになっているためエラーが出るたびにセッションを再起動する必要がある。。。
 * https://www.kaggle.com/yamqwe/purgedgrouptimeseries-cv-with-extra-data-lgbm/notebook#Data-Loading-%F0%9F%97%83%EF%B8%8F
   * validation参考に
@@ -159,10 +159,10 @@ def weighted_correlation(a, b, weights):
 * https://www.kaggle.com/c/g-research-crypto-forecasting/discussion/294928
   * 特徴量エンジニアリングの参考
 
-### 20210010
+### 20220110
 * 何日も前の移動平均はそんな必要なさそう（15分後のリターン予測？だから）
 
-### 2021011
+### 20220111
 * テストのエラーはprintしまくってたから時間かかったのでは？
 * 修正してサブミット(lgbm007)
 * kfoldのサブミットコード作成
@@ -177,8 +177,15 @@ def weighted_correlation(a, b, weights):
     * 高速アルゴリズム（移動平均などの）
   * rsiのアルゴリズムがかなり遅かった。
 
-### 2021013
+### 20220113
 * 特徴量を早く作れるように書き換えて、lgbm学習させたがリークしてる気がする
 
-### 2021014
+### 20220114
+* https://forum.numer.ai/t/model-diagnostics-feature-exposure/899
+  * feature_exposure
+  * https://yaakublog.com/numerai-feature-neutralization
+* https://note.com/j26/n/n64d9c37167a6（LightGBMのパラメータ)
 
+### 20220115
+* row_idではなくindexで行を抜き出していたため、エラーが発生してたっぽい
+* なお、timeoutは解消せず、、、

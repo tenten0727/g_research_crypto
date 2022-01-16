@@ -54,7 +54,7 @@ class Window_feature(Feature):
     def create_features(self):
         self.data['Asset_ID'] = data['Asset_ID']
         asset_group_close = data.groupby('Asset_ID').Close
-        l_window = [5, 15, 60]
+        l_window = [15, 60]
         for i in l_window:
             self.data['moving_average_'+str(i)] = asset_group_close.transform(lambda x: x.rolling(window=i).mean())
             self.data['moving_std_'+str(i)] = asset_group_close.transform(lambda x: x.rolling(window=i).std())
@@ -66,17 +66,17 @@ class Window_feature(Feature):
             self.data['volume_moving_average_'+str(i)] = data.groupby('Asset_ID').Volume.transform(lambda x: x.rolling(window=i).mean())
             
             # Bollinger Band
-            self.data['bollinger_band_high_'+str(i)] = self.data['moving_average_'+str(i)] + 2 * self.data['moving_std_'+str(i)]
-            self.data['bollinger_band_low_'+str(i)] = self.data['moving_average_'+str(i)] - 2 * self.data['moving_std_'+str(i)]
+            # self.data['bollinger_band_high_'+str(i)] = self.data['moving_average_'+str(i)] + 2 * self.data['moving_std_'+str(i)]
+            # self.data['bollinger_band_low_'+str(i)] = self.data['moving_average_'+str(i)] - 2 * self.data['moving_std_'+str(i)]
 
             # 相対力指数（RSI）...相場の過熱感を一定期間の終値から計算するオシレータ系指標
             self.data['RSI_'+str(i)] = asset_group_close.transform(lambda x: talib.RSI(x.values, i))
 
             # ２重指数移動平均(DEMA: Double Exponential Moving Average)
-            self.data['double_ema_'+str(i)] = asset_group_close.transform(lambda x: talib.DEMA(x, timeperiod=i))
+            # self.data['double_ema_'+str(i)] = asset_group_close.transform(lambda x: talib.DEMA(x, timeperiod=i))
 
             # Kaufmanの適応型移動平均(KAMA: Kaufman Adaptive Moving Average)
-            self.data['kama_'+str(i)] = asset_group_close.transform(lambda x: talib.KAMA(x, timeperiod=i))
+            # self.data['kama_'+str(i)] = asset_group_close.transform(lambda x: talib.KAMA(x, timeperiod=i))
 
         self.data['close_div_ma_60'] = data['Close'] / self.data['moving_average_60']
 
@@ -136,8 +136,8 @@ class Richman_feature(Feature):
         self.data['raw_market_return_causal'] = self.data['raw_return_causal'] * self.data['market_return_causal']
         self.data['market_return_causal_square'] = self.data['market_return_causal'] ** 2
         self.data['beta_causal'] = (
-            self.data.groupby('Asset_ID').raw_market_return_causal.transform(lambda x: x.rolling(3750, 1).mean())
-            / self.data.groupby('Asset_ID').market_return_causal_square.transform(lambda x: x.rolling(3750, 1).mean())
+            self.data.groupby('Asset_ID').raw_market_return_causal.transform(lambda x: x.rolling(60, 1).mean())
+            / self.data.groupby('Asset_ID').market_return_causal_square.transform(lambda x: x.rolling(60, 1).mean())
         )
 
         self.data['Close_diff1_rank'] = self.data.groupby('timestamp')['raw_return_causal'].transform('rank')
