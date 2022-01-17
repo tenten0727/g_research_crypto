@@ -34,7 +34,7 @@ with mlflow.start_run():
     print('--- Data Preparation ---')
     feats = glob.glob(FEATURE_FOLDER+'/**.pkl')
     data = load_datasets(feats)
-    data = data.dropna(how="any")
+    data = data.dropna(subset=['Target'])
 
     df_train = data[data['datetime'] < '2021-06-13 00:00:00']
     df_test = data[data['datetime'] >= '2021-06-13 00:00:00']
@@ -65,15 +65,16 @@ with mlflow.start_run():
 
     params = {
         "objective": "regression", 
-        # "metric": "rmse", 
+        "metric": "rmse", 
         "boosting_type": "gbdt",
-        'early_stopping_rounds': 100,
-        'learning_rate': 0.01,
-        'lambda_l1': 1,
-        'lambda_l2': 1,
-        'max_depth': 7,
-        'feature_fraction': 0.1,
-        'bagging_fraction': 0.1,
+        'early_stopping_rounds': 20,
+        'learning_rate': 0.05,
+        'lambda_l1': 5,
+        'lambda_l2': 5,
+        'max_depth': 3,
+        'num_leaves': 4,
+        'feature_fraction': 0.5,
+        'bagging_fraction': 0.5,
         'extra_trees': True,
         }
 
@@ -83,7 +84,7 @@ with mlflow.start_run():
                 train_set=lgbm_train,
                 valid_sets=[lgbm_train, lgbm_valid],
                 num_boost_round=1000,
-                verbose_eval=100,
+                verbose_eval=10,
                 feval=eval_w_corr,
                 categorical_feature = category_feature,
             )
