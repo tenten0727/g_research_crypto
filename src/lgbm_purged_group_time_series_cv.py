@@ -35,14 +35,14 @@ with mlflow.start_run(experiment_id=1):
     print('--- Data Preparation ---')
     feats = glob.glob(FEATURE_FOLDER+'/**.pkl')
     data = load_datasets(feats)
-    data = data.dropna(how="any")
+    data = data.dropna(subset=['Target'])
 
     df_train = data[data['datetime'] < '2021-06-13 00:00:00']
     df_test = data[data['datetime'] >= '2021-06-13 00:00:00']
     if opts.debug:
         df_train = df_train[:1000000]
 
-    del_columns = ['datetime', 'Target']
+    del_columns = ['datetime', 'Target', 'timestamp']
     X = df_train.drop(del_columns, axis=1)
     y = df_train['Target']
     with open(os.path.join(RESULT_FOLDER, 'columns.csv'), 'w') as f:
@@ -54,7 +54,7 @@ with mlflow.start_run(experiment_id=1):
     category_feature = ['Asset_ID']
 
     n_fold = 5
-    cv = PurgedGroupTimeSeriesSplit(n_splits = n_fold, group_gap = 100, max_train_group_size=500, max_test_group_size=120)
+    cv = PurgedGroupTimeSeriesSplit(n_splits = n_fold, group_gap = 50)
     groups = pd.factorize(df_train['datetime'].dt.day.astype(str) + '_' + df_train['datetime'].dt.month.astype(str) + '_' + df_train['datetime'].dt.year.astype(str))[0]
     asset_details = pd.read_csv(os.path.join(DATA_FOLDER, 'g-research-crypto-forecasting', 'asset_details.csv'))
     weight_map_dict = dict(zip(asset_details['Asset_ID'], asset_details['Weight']))
@@ -63,48 +63,51 @@ with mlflow.start_run(experiment_id=1):
     oof_preds = np.zeros(len(X))
 
     for i, (trn, val) in enumerate(cv.split(X, y, groups)):
-        print('fold: ', i)
+        with mlflow.start_run(experiment_id=1, nested=True):
+            print('fold: ', i)
+            mlflow.log_param('fold', i)
 
-        X_train, y_train = X.iloc[trn], y.iloc[trn]
-        X_valid, y_valid = X.iloc[val], y.iloc[val]
-        lgbm_train = lgbm.Dataset(X_train, y_train)
-        lgbm_valid = lgbm.Dataset(X_valid, y_valid)
-        lgbm_train.add_w = X_train['Weight']
-        lgbm_valid.add_w = X_valid['Weight']
+            X_train, y_train = X.iloc[trn], y.iloc[trn]
+            X_valid, y_valid = X.iloc[val], y.iloc[val]
+            lgbm_train = lgbm.Dataset(X_train, y_train)
+            lgbm_valid = lgbm.Dataset(X_valid, y_valid)
+            lgbm_train.add_w = X_train['Weight']
+            lgbm_valid.add_w = X_valid['Weight']
 
-        print('--- Training ---')
+            print('--- Training ---')
 
-        params = {
-            "objective": "regression", 
-            # "metric": "rmse", 
-            "boosting_type": "gbdt",
-            'early_stopping_rounds': 100,
-            'learning_rate': 0.01,
-            'lambda_l1': 1,
-            'lambda_l2': 1,
-            'max_depth': 7,
-            'feature_fraction': 0.8,
-            'bagging_fraction': 0.8,
-            }
+            params = {
+                "objective": "regression", 
+                # "metric": "rmse", 
+                "boosting_type": "gbdt",
+                'early_stopping_rounds': 100,
+                'learning_rate': 0.01,
+                'lambda_l1': 1,
+                'lambda_l2': 1,
+                'max_depth': 5,
+                'feature_fraction': 0.1,
+                'bagging_fraction': 0.1,
+                'extra_trees': True,
+                }
 
-        if i == 0: mlflow.log_params(params)
+            mlflow.log_params(params)
 
-        model = lgbm.train(params=params,
-                    train_set=lgbm_train,
-                    valid_sets=[lgbm_train, lgbm_valid],
-                    num_boost_round=1000,
-                    verbose_eval=100,
-                    feval=eval_w_corr,
-                    categorical_feature = category_feature,
-                )
-        
-        models.append(model)
-        pred = model.predict(X_valid, num_iteration=model.best_iteration)
-        oof_preds[val] = pred
-        cv_score = weighted_correlation(pred, y_valid, X_valid.Asset_ID.map(weight_map_dict))
-        print(f'~~~~~~~~ FOLD {i} wcorr: {cv_score} ~~~~~~~~')
-        model.save_model(os.path.join(RESULT_FOLDER, f'model{i}.lgb'), num_iteration=model.best_iteration)
-        mlflow.log_metric('fold_score', cv_score)
+            model = lgbm.train(params=params,
+                        train_set=lgbm_train,
+                        valid_sets=[lgbm_train, lgbm_valid],
+                        num_boost_round=100,
+                        verbose_eval=100,
+                        feval=eval_w_corr,
+                        categorical_feature = category_feature,
+                    )
+            
+            models.append(model)
+            pred = model.predict(X_valid, num_iteration=model.best_iteration)
+            oof_preds[val] = pred
+            cv_score = weighted_correlation(pred, y_valid, X_valid.Asset_ID.map(weight_map_dict))
+            print(f'~~~~~~~~ FOLD {i} wcorr: {cv_score} ~~~~~~~~')
+            model.save_model(os.path.join(RESULT_FOLDER, opts.save_name, f'model{i}.lgb'), num_iteration=model.best_iteration)
+            mlflow.log_metric('fold_score', cv_score)
 
     print('--- Test ---')
     X_test = df_test.drop(del_columns, axis=1)
