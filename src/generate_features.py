@@ -25,6 +25,12 @@ def upper_shadow(df):
 def lower_shadow(df):
     return np.minimum(df['Close'], df['Open']) - df['Low']
 
+def moving_average(a, n):
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret / n
+
+
 class Base(Feature):
     def create_features(self):
         self.data = data
@@ -56,14 +62,14 @@ class Window_feature(Feature):
         asset_group_close = data.groupby('Asset_ID').Close
         l_window = [15, 60]
         for i in l_window:
-            self.data['moving_average_'+str(i)] = asset_group_close.transform(lambda x: x.rolling(window=i).mean())
-            self.data['moving_std_'+str(i)] = asset_group_close.transform(lambda x: x.rolling(window=i).std())
+            self.data['moving_average_'+str(i)] = asset_group_close.transform(lambda x: moving_average(x.values, i))
+            self.data['moving_std_'+str(i)] = asset_group_close.transform(lambda x: x.rolling(window=i, min_periods=1).std())
             
             # 指数移動平均
             # self.data['exponential_moving_average_'+str(i)] = asset_group_close.transform(lambda x: x.ewm(min_periods=i, span=i).mean())
             
             # volumeの移動平均
-            self.data['volume_moving_average_'+str(i)] = data.groupby('Asset_ID').Volume.transform(lambda x: x.rolling(window=i).mean())
+            self.data['volume_moving_average_'+str(i)] = data.groupby('Asset_ID').Volume.transform(lambda x: moving_average(x.values, i))
             
             # Bollinger Band
             # self.data['bollinger_band_high_'+str(i)] = self.data['moving_average_'+str(i)] + 2 * self.data['moving_std_'+str(i)]
@@ -89,30 +95,22 @@ class Trend_Line(Feature):
         asset_group_close = data.groupby('Asset_ID').Close
 
         # トレンドライン(Hilbert Transform - Instantaneous Trendline)
-        self.data['ht_trendline'] = asset_group_close.transform(lambda x: talib.HT_TRENDLINE(x))
+        self.data['ht_trendline'] = asset_group_close.transform(lambda x: talib.HT_TRENDLINE(x.values))
 
         self.create_memo('trend_line特徴量')
 
-class MACD(Feature):
+class Per_Asset_feature(Feature):
     def create_features(self):
         self.data['Asset_ID'] = data['Asset_ID']
 
         for i in data.Asset_ID.unique():
-            self.data.loc[self.data.Asset_ID==i, 'MACD'], self.data.loc[self.data.Asset_ID==i, 'MACD_signal'], self.data.loc[self.data.Asset_ID==i, 'MACD_hist'] = talib.MACD(data[data.Asset_ID==i].Close, fastperiod=12, slowperiod=26, signalperiod=9)
+            self.data.loc[self.data.Asset_ID==i, 'MACD'], self.data.loc[self.data.Asset_ID==i, 'MACD_signal'], self.data.loc[self.data.Asset_ID==i, 'MACD_hist'] = talib.MACD(data[data.Asset_ID==i].Close.values, fastperiod=12, slowperiod=26, signalperiod=9)
+
+            x = data[data.Asset_ID==i]
+            self.data.loc[data.Asset_ID==i, 'adx'] = talib.ADX(x.High.values, x.Low.values, x.Close.values, timeperiod=14)
 
         self.data.drop('Asset_ID', axis=1, inplace=True)
-        self.create_memo('MACD特徴量')
-
-# Ta-Libを利用して算出
-class ADX(Feature):
-    def create_features(self):
-        for id in data.Asset_ID.unique():
-        # ADX - Average Directional Movement Index (平均方向性指数)
-        # トレンドの存在を確認するための指標
-            x = data[data.Asset_ID==id]
-            self.data.loc[data.Asset_ID==id, 'adx'] = talib.ADX(x.High, x.Low, x.Close, timeperiod=14)
-
-        self.create_memo('ADX特徴量')
+        self.create_memo('Asset_IDごとの特徴量')
 
 
 # richmanbtcさんのfeature https://www.kaggle.com/richmanbtc/20211103-gresearch-crypto-v1
@@ -136,8 +134,8 @@ class Richman_feature(Feature):
         self.data['raw_market_return_causal'] = self.data['raw_return_causal'] * self.data['market_return_causal']
         self.data['market_return_causal_square'] = self.data['market_return_causal'] ** 2
         self.data['beta_causal'] = (
-            self.data.groupby('Asset_ID').raw_market_return_causal.transform(lambda x: x.rolling(60, 1).mean())
-            / self.data.groupby('Asset_ID').market_return_causal_square.transform(lambda x: x.rolling(60, 1).mean())
+            self.data.groupby('Asset_ID').raw_market_return_causal.transform(lambda x: moving_average(x.fillna(0).values, 60))
+            / self.data.groupby('Asset_ID').market_return_causal_square.transform(lambda x: moving_average(x.fillna(0).values, 60))
         )
 
         self.data['Close_diff1_rank'] = self.data.groupby('timestamp')['raw_return_causal'].transform('rank')

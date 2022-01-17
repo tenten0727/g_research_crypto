@@ -4,6 +4,5 @@ Shadow_features,Shadow features,Upper_Shadow / Lower_Shadow
 Arithmetic_operations,四則演算で計算した特徴量,high_low_div / open_close_div / open_close_sub / high_low_sub / hlco_ration
 Window_feature,テクニカル分析の際に用いる指標に関する特徴量,moving_average_15 / moving_std_15 / volume_moving_average_15 / RSI_15 / moving_average_60 / moving_std_60 / volume_moving_average_60 / RSI_60 / close_div_ma_60
 Trend_Line,trend_line特徴量,ht_trendline
-MACD,MACD特徴量,MACD / MACD_signal / MACD_hist
-ADX,ADX特徴量,adx
+Per_Asset_feature,Asset_IDごとの特徴量,MACD / MACD_signal / MACD_hist / adx
 Richman_feature,Richmanbtcさんのノートブックの特徴量,ln_Close / Weight / raw_return_causal / w_raw_return_causal / market_return_causal / raw_market_return_causal / market_return_causal_square / beta_causal / Close_diff1_rank
