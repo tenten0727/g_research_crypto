@@ -11,6 +11,7 @@ from sklearn.model_selection import KFold
 import glob
 from sklearn.cluster import KMeans
 import talib
+from math import sqrt, log
 
 import sys
 sys.path.append('../src')
@@ -30,10 +31,16 @@ def moving_average(a, n):
     ret[n:] = ret[n:] - ret[:-n]
     return ret / n
 
+def realized_volatility(close, N=240):
+    rt = list(log(C_t / C_t_1) for C_t, C_t_1 in zip(close[1:], close[:-1]))
+    rt_mean = sum(rt) / len(rt)
+    return sqrt(sum((r_i - rt_mean) ** 2 for r_i in rt) * N / (len(rt) - 1))
 
 class Base(Feature):
     def create_features(self):
-        self.data = data
+        self.data = data.copy()
+        self.data['Weight'] = data.merge(asset_detail[['Asset_ID', 'Weight']], on='Asset_ID', how='left')['Weight']
+
         self.create_memo('Base feature')
 
 class Shadow_features(Feature):
@@ -53,14 +60,19 @@ class Arithmetic_operations(Feature):
 
         self.data['hlco_ration'] = self.data["open_close_sub"] / self.data["high_low_sub"]
 
+        self.data['mean_price'] = data[['High', 'Low', 'Open', 'Close']].mean(axis=1)
+        self.data['median_price'] = data[['High', 'Low', 'Open', 'Close']].median(axis=1)
+
         self.create_memo('四則演算で計算した特徴量')
 
 # https://www.kaggle.com/yamqwe/crypto-prediction-technical-analysis-features
 class Window_feature(Feature):
     def create_features(self):
         self.data['Asset_ID'] = data['Asset_ID']
+        self.data['timestamp'] = data['timestamp']
+
         asset_group_close = data.groupby('Asset_ID').Close
-        l_window = [15, 60]
+        l_window = [5, 15, 60]
         for i in l_window:
             self.data['moving_average_'+str(i)] = asset_group_close.transform(lambda x: moving_average(x.values, i))
             self.data['moving_std_'+str(i)] = asset_group_close.transform(lambda x: x.rolling(window=i, min_periods=1).std())
@@ -84,20 +96,32 @@ class Window_feature(Feature):
             # Kaufmanの適応型移動平均(KAMA: Kaufman Adaptive Moving Average)
             # self.data['kama_'+str(i)] = asset_group_close.transform(lambda x: talib.KAMA(x, timeperiod=i))
 
+        # self.data['close_div_ma_5'] = data['Close'] / self.data['moving_average_5']
+        # self.data['close_div_ma_15'] = data['Close'] / self.data['moving_average_15']
         self.data['close_div_ma_60'] = data['Close'] / self.data['moving_average_60']
 
-        self.data.drop('Asset_ID', axis=1, inplace=True)
+        # self.data['volume_div_ma_5'] = data['Volume'] / self.data['volume_moving_average_5']
+        # self.data['volume_div_ma_15'] = data['Volume'] / self.data['volume_moving_average_15']
+        self.data['volume_div_ma_60'] = data['Volume'] / self.data['volume_moving_average_60']
+
+        self.data['close_div_ma_60_rank'] = self.data.groupby('timestamp').close_div_ma_60.transform('rank')
+        self.data['volume_div_ma_60_rank'] = self.data.groupby('timestamp').volume_div_ma_60.transform('rank')
+        self.data['RSI_5_rank'] = self.data.groupby('timestamp').RSI.transform('rank')
+        self.data['RSI_15_rank'] = self.data.groupby('timestamp').RSI.transform('rank')
+        self.data['RSI_60_rank'] = self.data.groupby('timestamp').RSI.transform('rank')
+
+        self.data.drop('Asset_ID, timestamp', axis=1, inplace=True)
         self.create_memo('テクニカル分析の際に用いる指標に関する特徴量')
 
 # Ta-Libを利用して算出
-class Trend_Line(Feature):
-    def create_features(self):
-        asset_group_close = data.groupby('Asset_ID').Close
+# class Trend_Line(Feature):
+#     def create_features(self):
+#         asset_group_close = data.groupby('Asset_ID').Close
 
-        # トレンドライン(Hilbert Transform - Instantaneous Trendline)
-        self.data['ht_trendline'] = asset_group_close.transform(lambda x: talib.HT_TRENDLINE(x.values))
+#         # トレンドライン(Hilbert Transform - Instantaneous Trendline)
+#         self.data['ht_trendline'] = asset_group_close.transform(lambda x: talib.HT_TRENDLINE(x.values))
 
-        self.create_memo('trend_line特徴量')
+#         self.create_memo('trend_line特徴量')
 
 class Per_Asset_feature(Feature):
     def create_features(self):
@@ -107,7 +131,7 @@ class Per_Asset_feature(Feature):
             self.data.loc[self.data.Asset_ID==i, 'MACD'], self.data.loc[self.data.Asset_ID==i, 'MACD_signal'], self.data.loc[self.data.Asset_ID==i, 'MACD_hist'] = talib.MACD(data[data.Asset_ID==i].Close.values, fastperiod=12, slowperiod=26, signalperiod=9)
 
             x = data[data.Asset_ID==i]
-            self.data.loc[data.Asset_ID==i, 'adx'] = talib.ADX(x.High.values, x.Low.values, x.Close.values, timeperiod=14)
+            self.data.loc[self.data.Asset_ID==i, 'adx'] = talib.ADX(x.High.values, x.Low.values, x.Close.values, timeperiod=14)
 
         self.data.drop('Asset_ID', axis=1, inplace=True)
         self.create_memo('Asset_IDごとの特徴量')
@@ -140,8 +164,21 @@ class Richman_feature(Feature):
 
         self.data['Close_diff1_rank'] = self.data.groupby('timestamp')['raw_return_causal'].transform('rank')
 
-        self.data.drop(['timestamp', 'Asset_ID'], axis=1, inplace=True)
+        self.data.drop(['timestamp', 'Asset_ID', 'Weight'], axis=1, inplace=True)
         self.create_memo('Richmanbtcさんのノートブックの特徴量')
+
+class Volatility_feature(Feature):
+    def create_features(self):
+        self.data['Asset_ID'] = data['Asset_ID']
+        self.data['ln_Close'] = np.log(data['Close'])
+        self.data['timestamp'] = data['timestamp']
+
+        self.data['log_return_1'] = self.data.ln_Close - self.data.groupby('Asset_ID')['ln_Close'].shift(1)
+        self.data['realized_volatility_15'] = self.data.groupby('Asset_ID').log_return_1.transform(lambda x: x.rolling(15).std(ddof=0))
+        self.data['RV_15_rank'] = self.data.groupby('timestamp')['realized_volatility_15'].transform('rank')
+
+        self.data.drop(['Asset_ID', 'ln_Close', 'timestamp'], axis=1, inplace=True)
+        self.create_memo('Volatilityに関する特徴量')
 
 def run():
     if not os.path.isdir(Feature.dir):
