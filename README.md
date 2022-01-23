@@ -137,7 +137,7 @@ def weighted_correlation(a, b, weights):
 * PurgedGroupTimeSeriesSplitがかなり時間かかる
   * 移動平均などを使用しているため、パージするのは大事そう
   * とりあえずクロスバリデーションはせずに、単純に何日か開けてバリデーションを作る
-  * 2018-01-01~2021-09-21
+  * train: 2018-01-01~2021-09-21
   * 特徴量に追加しよう
 
 ### 20220108
@@ -189,3 +189,39 @@ def weighted_correlation(a, b, weights):
 ### 20220115
 * row_idではなくindexで行を抜き出していたため、エラーが発生してたっぽい
 * なお、timeoutは解消せず、、、
+
+### 20220116
+* https://www.sciencedirect.com/science/article/pii/S0169207021001679
+  * 論文（ツリー系のモデルの可能性）
+* train, sup_train, testは時系列順で連続につながっている！！
+* 今後やること
+  * 特徴量増やす
+  * 高速化は提出できればしないで他の特徴量を試す
+  * cvでテスト
+  * 学習データ増やす
+  * 中和
+* 今の市場は強気でそのまま続くなら最近のデータを使って学習して強気市場の特徴を捉えたら勝てる
+* purgeをvalidationの前と後ろにとってそれ以外全部trainっていうcvもあった
+
+### 20220117
+* 提出できたけどめちゃくちゃスコア低い 
+  * moving_averageがnullになっているとか？
+  * validationはそこそこ高いのに、、、過学習？
+
+### 20220118
+* 開発者のgithubでのコメントを感情分析し、モデルに組み込んで精度が向上した例があるらしい
+* Price Rate Of Change (ROC): it measures the percentage change in price between the current price and the price a certain number of periods ago.
+* Momentum: it is the rate of acceleration of a security’s price, i.e. the speed at which the price is changing.This measure is particularly useful to identify trends.
+* On Balance Volume (OBV ): it is a technical momentum indicator based on the traded volume of an asset to predict changes in stock price.
+
+### 20220119
+* テストより前のデータをhistoryに入れておいてる（これが本当に合っているかはわからない）
+* ボラティリティの特徴量を追加
+  * https://www.kaggle.com/yamqwe/crypto-prediction-volatility-features
+
+### 20220120
+* ある銘柄の指標は、他銘柄の指標や自身の過去の値と「比較」することで初めて意味を持ちます。逆に言うと単純に採用した指標には説明力が乏しく、検証でどれだけ良い結果が得られても全く信用するに値しません。 https://we.love-profit.com/entry/2017/01/27/160350
+  * 前の時点でのデータとの比較や他の銘柄の比較を行わないと意味ある特徴量にはならないようだ。。。
+* ミュータブルなオブジェクトはcopyしないとオブジェクトが同じものを指しているので元の方まで変わっちゃう
+  * https://qiita.com/Kaz_K/items/a3d619b9e670e689b6db
+* 
