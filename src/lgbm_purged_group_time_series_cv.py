@@ -9,6 +9,7 @@ import mlflow.lightgbm
 import csv
 import glob
 import numpy as np
+import pickle
 
 from feature_base import load_datasets
 from utils import weighted_correlation, eval_w_corr, PurgedGroupTimeSeriesSplit
@@ -33,7 +34,10 @@ with mlflow.start_run(experiment_id=1):
         os.makedirs(os.path.join(RESULT_FOLDER, opts.save_name))
 
     print('--- Data Preparation ---')
-    feats = glob.glob(FEATURE_FOLDER+'/**.pkl')
+    # feats = glob.glob(FEATURE_FOLDER+'/**.pkl')
+    feats = ['Arithmetic_operations', 'Richman_feature', 'Window_feature', 'Volatility_feature', 'Base']
+    mlflow.log_param('feature', feats)
+    feats = [FEATURE_FOLDER+'/'+f+'.pkl' for f in feats]
     data = load_datasets(feats)
     data = data.dropna(subset=['Target'])
 
@@ -42,7 +46,7 @@ with mlflow.start_run(experiment_id=1):
     if opts.debug:
         df_train = df_train[:1000000]
 
-    del_columns = ['datetime', 'Target', 'timestamp']
+    del_columns = ['datetime', 'Target', 'timestamp', 'Count', 'Open', 'High', 'Low', 'Close', 'Volume', 'VWAP' ]
     X = df_train.drop(del_columns, axis=1)
     y = df_train['Target']
     with open(os.path.join(RESULT_FOLDER, 'columns.csv'), 'w') as f:
@@ -78,16 +82,18 @@ with mlflow.start_run(experiment_id=1):
 
             params = {
                 "objective": "regression", 
-                # "metric": "rmse", 
+                "metric": "rmse", 
                 "boosting_type": "gbdt",
-                'early_stopping_rounds': 100,
-                'learning_rate': 0.01,
-                'lambda_l1': 1,
-                'lambda_l2': 1,
-                'max_depth': 5,
-                'feature_fraction': 0.1,
-                'bagging_fraction': 0.1,
+                # 'early_stopping_rounds': 20,
+                'learning_rate': 0.05,
+                'lambda_l1': 5,
+                'lambda_l2': 5,
+                'max_depth': 3,
+                'num_leaves': 4,
+                'feature_fraction': 0.5,
+                'bagging_fraction': 0.5,
                 'extra_trees': True,
+                'seed': 55
                 }
 
             mlflow.log_params(params)
@@ -96,7 +102,7 @@ with mlflow.start_run(experiment_id=1):
                         train_set=lgbm_train,
                         valid_sets=[lgbm_train, lgbm_valid],
                         num_boost_round=100,
-                        verbose_eval=100,
+                        verbose_eval=10,
                         feval=eval_w_corr,
                         categorical_feature = category_feature,
                     )
@@ -108,6 +114,8 @@ with mlflow.start_run(experiment_id=1):
             print(f'~~~~~~~~ FOLD {i} wcorr: {cv_score} ~~~~~~~~')
             model.save_model(os.path.join(RESULT_FOLDER, opts.save_name, f'model{i}.lgb'), num_iteration=model.best_iteration)
             mlflow.log_metric('fold_score', cv_score)
+            
+    pickle.dump(oof_preds, open(os.path.join(RESULT_FOLDER, opts.save_name, 'oof_preds.pkl'), 'wb'))
 
     print('--- Test ---')
     X_test = df_test.drop(del_columns, axis=1)
