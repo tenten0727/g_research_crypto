@@ -35,10 +35,14 @@ with mlflow.start_run(experiment_id=2):
         os.makedirs(os.path.join(RESULT_FOLDER, opts.save_name))
 
     print('--- Data Preparation ---')
-    feats = glob.glob(FEATURE_FOLDER+'/**.pkl')
+    # feats = glob.glob(FEATURE_FOLDER+'/**.pkl')
+    feats = ['Base', 'Arithmetic_operations', 'Shadow_features', 'Richman_feature', 'Volatility_feature']
+    feats = [FEATURE_FOLDER+'/'+f+'.pkl' for f in feats]
     data = load_datasets(feats)
     data = data.replace([np.inf, -np.inf], np.nan)
-    data = data.dropna(how="any")
+    # data = data.dropna(how="any")
+    data = data.dropna(subset=['Target'])
+    data = data.fillna(data.mean())
 
     df_train = data[data['datetime'] < '2021-06-13 00:00:00']
     df_test = data[data['datetime'] >= '2021-06-13 00:00:00']
@@ -61,7 +65,7 @@ with mlflow.start_run(experiment_id=2):
 
     print('--- Training ---')
 
-    model = Ridge()
+    model = Ridge(alpha=100)
 
     model = Pipeline([
         ('scaler', StandardScaler()),

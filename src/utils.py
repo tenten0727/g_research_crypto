@@ -364,3 +364,16 @@ def fillna_npwhere_njit(array, values):
     if np.isnan(array.sum()):
         array = np.where(np.isnan(array), values, array)
     return array
+
+def neutralize_series(series : pd.Series, by : pd.Series, proportion=1.0):
+    """
+    neutralize pandas series (originally from the Numerai Tournament)
+    """
+    scores = series.values.reshape(-1, 1)
+    exposures = by.values.reshape(-1, 1)
+    exposures = np.hstack((exposures, np.array([np.mean(series)] * len(exposures)).reshape(-1, 1)))
+    correction = proportion * (exposures.dot(np.linalg.lstsq(exposures, scores)[0]))
+    corrected_scores = scores - correction
+    neutralized = pd.Series(corrected_scores.ravel(), index=series.index)
+    return neutralized
+
