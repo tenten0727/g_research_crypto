@@ -55,13 +55,10 @@ class Arithmetic_operations(Feature):
         self.data['high_low_div'] = data['High'] / data['Low']
         self.data['open_close_div'] = data['Open'] / data['Close']
 
-        self.data["open_close_sub"] = data["Open"] - data["Close"]
-        self.data["high_low_sub"] = data["High"] - data["Low"]
+        self.data['hlco_ration'] = (data["Open"] - data["Close"]) / (data["High"] - data["Low"])
 
-        self.data['hlco_ration'] = self.data["open_close_sub"] / self.data["high_low_sub"]
-
-        self.data['mean_price'] = data[['High', 'Low', 'Open', 'Close']].mean(axis=1)
-        self.data['median_price'] = data[['High', 'Low', 'Open', 'Close']].median(axis=1)
+        # self.data['mean_price'] = data[['High', 'Low', 'Open', 'Close']].mean(axis=1)
+        # self.data['median_price'] = data[['High', 'Low', 'Open', 'Close']].median(axis=1)
 
         self.create_memo('四則演算で計算した特徴量')
 
@@ -96,21 +93,24 @@ class Window_feature(Feature):
             # Kaufmanの適応型移動平均(KAMA: Kaufman Adaptive Moving Average)
             # self.data['kama_'+str(i)] = asset_group_close.transform(lambda x: talib.KAMA(x, timeperiod=i))
 
-        # self.data['close_div_ma_5'] = data['Close'] / self.data['moving_average_5']
-        # self.data['close_div_ma_15'] = data['Close'] / self.data['moving_average_15']
+        self.data['close_div_ma_5'] = data['Close'] / self.data['moving_average_5']
+        self.data['close_div_ma_15'] = data['Close'] / self.data['moving_average_15']
         self.data['close_div_ma_60'] = data['Close'] / self.data['moving_average_60']
 
-        # self.data['volume_div_ma_5'] = data['Volume'] / self.data['volume_moving_average_5']
-        # self.data['volume_div_ma_15'] = data['Volume'] / self.data['volume_moving_average_15']
+        self.data['volume_div_ma_5'] = data['Volume'] / self.data['volume_moving_average_5']
+        self.data['volume_div_ma_15'] = data['Volume'] / self.data['volume_moving_average_15']
         self.data['volume_div_ma_60'] = data['Volume'] / self.data['volume_moving_average_60']
 
-        self.data['close_div_ma_60_rank'] = self.data.groupby('timestamp').close_div_ma_60.transform('rank')
-        self.data['volume_div_ma_60_rank'] = self.data.groupby('timestamp').volume_div_ma_60.transform('rank')
-        self.data['RSI_5_rank'] = self.data.groupby('timestamp').RSI.transform('rank')
-        self.data['RSI_15_rank'] = self.data.groupby('timestamp').RSI.transform('rank')
-        self.data['RSI_60_rank'] = self.data.groupby('timestamp').RSI.transform('rank')
+        self.data['close_div_ma_15_rank'] = self.data.groupby('timestamp').close_div_ma_15.transform('rank')
+        self.data['volume_div_ma_15_rank'] = self.data.groupby('timestamp').volume_div_ma_15.transform('rank')
 
-        self.data.drop('Asset_ID, timestamp', axis=1, inplace=True)
+        self.data['RSI_5_rank'] = self.data.groupby('timestamp').RSI_5.transform('rank')
+        self.data['RSI_15_rank'] = self.data.groupby('timestamp').RSI_15.transform('rank')
+        self.data['RSI_60_rank'] = self.data.groupby('timestamp').RSI_60.transform('rank')
+
+        ma = [col for col in self.data.columns if 'moving_average_' in col]
+        vol = [col for col in self.data.columns if 'volume_moving_average_' in col]
+        self.data.drop(['Asset_ID', 'timestamp']+ma+vol, axis=1, inplace=True)
         self.create_memo('テクニカル分析の際に用いる指標に関する特徴量')
 
 # Ta-Libを利用して算出
@@ -148,23 +148,25 @@ class Richman_feature(Feature):
 
         # shift is faster than diff
         # ログリターンを計算
-        self.data['raw_return_causal'] = self.data['ln_Close'] - self.data.groupby('Asset_ID')['ln_Close'].shift(15)
+        self.data['log_return_5'] = self.data['ln_Close'] - self.data.groupby('Asset_ID')['ln_Close'].shift(5)
+        self.data['log_return_15'] = self.data['ln_Close'] - self.data.groupby('Asset_ID')['ln_Close'].shift(15)
+        self.data['log_return_60'] = self.data['ln_Close'] - self.data.groupby('Asset_ID')['ln_Close'].shift(60)
         
         inv_weight_sum = 1.0 / self.data.groupby('timestamp')['Weight'].transform('sum')
         
-        self.data['w_raw_return_causal'] = self.data['raw_return_causal'] * self.data['Weight']
-        self.data['market_return_causal'] = self.data.groupby('timestamp').w_raw_return_causal.transform('sum') * inv_weight_sum
+        self.data['w_log_return_15'] = self.data['log_return_15'] * self.data['Weight']
+        self.data['market_return_causal'] = self.data.groupby('timestamp').w_log_return_15.transform('sum') * inv_weight_sum
         
-        self.data['raw_market_return_causal'] = self.data['raw_return_causal'] * self.data['market_return_causal']
+        self.data['raw_market_return_causal'] = self.data['log_return_15'] * self.data['market_return_causal']
         self.data['market_return_causal_square'] = self.data['market_return_causal'] ** 2
         self.data['beta_causal'] = (
             self.data.groupby('Asset_ID').raw_market_return_causal.transform(lambda x: moving_average(x.fillna(0).values, 60))
             / self.data.groupby('Asset_ID').market_return_causal_square.transform(lambda x: moving_average(x.fillna(0).values, 60))
         )
 
-        self.data['Close_diff1_rank'] = self.data.groupby('timestamp')['raw_return_causal'].transform('rank')
+        self.data['Close_diff1_rank'] = self.data.groupby('timestamp')['log_return_15'].transform('rank')
 
-        self.data.drop(['timestamp', 'Asset_ID', 'Weight'], axis=1, inplace=True)
+        self.data.drop(['timestamp', 'Asset_ID', 'Weight', 'ln_Close'], axis=1, inplace=True)
         self.create_memo('Richmanbtcさんのノートブックの特徴量')
 
 class Volatility_feature(Feature):
@@ -174,8 +176,9 @@ class Volatility_feature(Feature):
         self.data['timestamp'] = data['timestamp']
 
         self.data['log_return_1'] = self.data.ln_Close - self.data.groupby('Asset_ID')['ln_Close'].shift(1)
-        self.data['realized_volatility_15'] = self.data.groupby('Asset_ID').log_return_1.transform(lambda x: x.rolling(15).std(ddof=0))
-        self.data['RV_15_rank'] = self.data.groupby('timestamp')['realized_volatility_15'].transform('rank')
+        for i in [5, 15, 60]:
+            self.data['realized_volatility_'+str(i)] = self.data.groupby('Asset_ID').log_return_1.transform(lambda x: x.rolling(i).std(ddof=0))
+            self.data['RV_'+str(i)+'_rank'] = self.data.groupby('timestamp')['realized_volatility_'+str(i)].transform('rank')
 
         self.data.drop(['Asset_ID', 'ln_Close', 'timestamp'], axis=1, inplace=True)
         self.create_memo('Volatilityに関する特徴量')

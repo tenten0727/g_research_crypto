@@ -1,8 +1,8 @@
 特徴量名,説明,カラム
 Base,Base feature,timestamp / Asset_ID / Count / Open / High / Low / Close / Volume / VWAP / Target / datetime / Weight
 Shadow_features,Shadow features,Upper_Shadow / Lower_Shadow
-Arithmetic_operations,四則演算で計算した特徴量,high_low_div / open_close_div / open_close_sub / high_low_sub / hlco_ration / mean_price / median_price
-Window_feature,テクニカル分析の際に用いる指標に関する特徴量,moving_average_5 / moving_std_5 / volume_moving_average_5 / RSI_5 / moving_average_15 / moving_std_15 / volume_moving_average_15 / RSI_15 / moving_average_60 / moving_std_60 / volume_moving_average_60 / RSI_60 / close_div_ma_5 / close_div_ma_15 / close_div_ma_60 / volume_div_ma_5 / volume_div_ma_15 / volume_div_ma_60
+Arithmetic_operations,四則演算で計算した特徴量,high_low_div / open_close_div / hlco_ration
+Window_feature,テクニカル分析の際に用いる指標に関する特徴量,moving_std_5 / RSI_5 / moving_std_15 / RSI_15 / moving_std_60 / RSI_60 / close_div_ma_5 / close_div_ma_15 / close_div_ma_60 / volume_div_ma_5 / volume_div_ma_15 / volume_div_ma_60 / close_div_ma_15_rank / volume_div_ma_15_rank / RSI_5_rank / RSI_15_rank / RSI_60_rank
 Per_Asset_feature,Asset_IDごとの特徴量,MACD / MACD_signal / MACD_hist / adx
-Richman_feature,Richmanbtcさんのノートブックの特徴量,ln_Close / raw_return_causal / w_raw_return_causal / market_return_causal / raw_market_return_causal / market_return_causal_square / beta_causal / Close_diff1_rank
-Volatility_feature,Volatilityに関する特徴量,log_return_1 / realized_volatility_15 / RV_15_rank
+Richman_feature,Richmanbtcさんのノートブックの特徴量,log_return_5 / log_return_15 / log_return_60 / w_log_return_15 / market_return_causal / raw_market_return_causal / market_return_causal_square / beta_causal / Close_diff1_rank
+Volatility_feature,Volatilityに関する特徴量,log_return_1 / realized_volatility_5 / RV_5_rank / realized_volatility_15 / RV_15_rank / realized_volatility_60 / RV_60_rank
